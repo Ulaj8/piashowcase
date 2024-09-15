@@ -1,0 +1,7 @@
+flask
+requests
+redis
+pika
+gunicorn
+psycopg2-binary
+mysql-connector-python

@@ -1,0 +1,68 @@
+version: '3'
+services:
+  mysql:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: yourpassword
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: youruser
+      MYSQL_PASSWORD: yourpassword
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - pia_network
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - pia_network
+
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - pia_network
+
+  user-service:
+    build: ./user_service
+    ports:
+      - "5001:5001"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: youruser
+      MYSQL_PASSWORD: yourpassword
+    depends_on:
+      - mysql
+      - redis
+      - rabbitmq
+    networks:
+      - pia_network
+
+  product-service:
+    build: ./product_service
+    ports:
+      - "5002:5002"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: youruser
+      MYSQL_PASSWORD: yourpassword
+    depends_on:
+      - mysql
+    networks:
+      - pia_network
+
+  # Diğer servisler buraya eklenebilir (inventory, order vb.)
+
+volumes:
+  mysql-data:
+
+networks:
+  pia_network:
