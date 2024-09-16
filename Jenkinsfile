@@ -3,7 +3,11 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/Ulaj8/piashowcase.git'
+                checkout scmGit(
+                    branches: [[name: 'master']],
+                    extensions: [cloneOption(honorRefspec: true, noTags: true, reference: '', shallow: false), localBranch('master')],
+                    userRemoteConfigs: [[credentialsId: 'pia', url: 'https://github.com/Ulaj8/piashowcase']]
+                )
             }
         }
         stage('Build Docker Image') {

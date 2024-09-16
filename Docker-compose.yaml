@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 services:
   mysql:
     image: mysql:latest
@@ -13,6 +13,11 @@ services:
       - mysql-data:/var/lib/mysql
     networks:
       - pia_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:alpine
@@ -39,9 +44,12 @@ services:
       MYSQL_USER: youruser
       MYSQL_PASSWORD: yourpassword
     depends_on:
-      - mysql
-      - redis
-      - rabbitmq
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
     networks:
       - pia_network
 
@@ -55,14 +63,94 @@ services:
       MYSQL_USER: youruser
       MYSQL_PASSWORD: yourpassword
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     networks:
       - pia_network
 
-  # Diğer servisler buraya eklenebilir (inventory, order vb.)
+  order-service:
+    build: ./order_service
+    ports:
+      - "5003:5003"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: youruser
+      MYSQL_PASSWORD: yourpassword
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - pia_network
+
+  inventory-service:
+    build: ./inventory_service
+    ports:
+      - "5004:5004"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: youruser
+      MYSQL_PASSWORD: yourpassword
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - pia_network
+
+  payment-service:
+    build: ./payment_service
+    ports:
+      - "5005:5005"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: youruser
+      MYSQL_PASSWORD: yourpassword
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - pia_network
+
+  publisher-service:
+    build: ./publisher_service
+    ports:
+      - "5006:5006"
+    depends_on:
+      rabbitmq:
+        condition: service_started
+    networks:
+      - pia_network
+
+  review-service:
+    build: ./review_service
+    ports:
+      - "5007:5007"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: youruser
+      MYSQL_PASSWORD: yourpassword
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - pia_network
+
+  subscriber-service:
+    build: ./subscriber_service
+    ports:
+      - "5008:5008"
+    depends_on:
+      rabbitmq:
+        condition: service_started
+    networks:
+      - pia_network
 
 volumes:
   mysql-data:
 
 networks:
   pia_network:
+    driver: bridge

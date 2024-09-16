@@ -1,15 +1,26 @@
 from flask import Flask, jsonify, request  # Flask ve JSON işlemleri için gerekli kütüphaneler
 import mysql.connector  # MySQL bağlantısı için gerekli kütüphane
+import time
 
 app = Flask(__name__)
 
-# Veritabanı bağlantısı için gerekli bilgileri tanımlıyorum
-db = mysql.connector.connect(
-    host="mysql-service",  # MySQL servisi adı
-    user="youruser",  # Daha önce oluşturduğun MySQL kullanıcı adı
-    password="yourpassword",  # MySQL kullanıcı şifresi
-    database="mydb"  # Bağlanacağın veritabanı
-)
+# Veritabanı bağlantısı fonksiyonu
+def connect_db():
+    while True:
+        try:
+            # Veritabanı bağlantısı için gerekli bilgileri tanımlıyorum
+            db = mysql.connector.connect(
+                host="mysql",  # MySQL servisi adı (docker-compose ile container adı mysql)
+                user="youruser",  # Daha önce oluşturduğun MySQL kullanıcı adı
+                password="yourpassword",  # MySQL kullanıcı şifresi
+                database="mydb"  # Bağlanacağın veritabanı
+            )
+            return db
+        except mysql.connector.Error as err:
+            print(f"Bağlanılamadı: {err}. 5 saniye sonra tekrar denenecek.")
+            time.sleep(5)
+
+db = connect_db()
 
 # Ana sayfa endpoint'i
 @app.route('/')
